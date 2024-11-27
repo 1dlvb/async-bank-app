@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  bank_postgres:
+    container_name: bank_postgres
+    image: postgres:16
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=bank_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - bank_postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+
+volumes:
+  bank_postgres_data:
