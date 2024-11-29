@@ -21,6 +21,11 @@ import java.util.concurrent.StructuredTaskScope;
 @RequiredArgsConstructor
 public class DepositServiceImpl implements DepositService {
 
+    private static final double[] OPERATION_PERCENTAGE = {0.05, 0.1, 0.15, 0.2};
+    private static final double[] TOP_UP_PERCENTAGES = {0.05, 0.1, 0.15, 0.2};
+    private static final double[] WITHDRAW_PERCENTAGES = {0.025, 0.05, 0.1, 0.15};
+
+
     @NonNull
     private final DepositRepository depositRepository;
 
@@ -162,8 +167,7 @@ public class DepositServiceImpl implements DepositService {
 
     private Map<String, Double> calculateTopUpBalancesForStatistics(LocalDate date, double depositBalance, Deposit deposit) {
         Map<String, Double> balances = new LinkedHashMap<>();
-        double[] percentages = {0.005, 0.01, 0.015, 0.02};
-        for (double percentage : percentages) {
+        for (double percentage : OPERATION_PERCENTAGE) {
             double topUpAmount = depositBalance * percentage;
             balances.put(String.format("balance_with_%d_percents_top_ups", (int) (percentage * 100)),
                     calculateUpdatableDepositBalanceByDate(date, topUpAmount, deposit));
@@ -173,16 +177,14 @@ public class DepositServiceImpl implements DepositService {
 
     private Map<String, Double> calculateTopUpAndWithdrawBalancesForStatistics(LocalDate date, double depositBalance, Deposit deposit) {
         Map<String, Double> balances = new LinkedHashMap<>();
-        double[] topUpPercentages = {0.005, 0.01, 0.015, 0.02};
-        double[] withdrawPercentages = {0.0025, 0.005, 0.01, 0.015};
 
-        for (int i = 0; i < topUpPercentages.length; i++) {
-            double topUpAmount = depositBalance * topUpPercentages[i];
-            double withdrawAmount = -depositBalance * withdrawPercentages[i % withdrawPercentages.length];
+        for (int i = 0; i < TOP_UP_PERCENTAGES.length; i++) {
+            double topUpAmount = depositBalance * TOP_UP_PERCENTAGES[i];
+            double withdrawAmount = -depositBalance * WITHDRAW_PERCENTAGES[i % WITHDRAW_PERCENTAGES.length];
             balances.put(
                     String.format("balance_with_%d_percents_top_ups_and_%d_percents_withdraw",
-                            (int) (topUpPercentages[i] * 100),
-                            (int) Math.abs(withdrawPercentages[i % withdrawPercentages.length] * 100)),
+                            (int) (TOP_UP_PERCENTAGES[i] * 100),
+                            (int) Math.abs(WITHDRAW_PERCENTAGES[i % WITHDRAW_PERCENTAGES.length] * 100)),
                     calculateUpdatableDepositBalanceByDate(date, topUpAmount, withdrawAmount, deposit)
             );
         }
