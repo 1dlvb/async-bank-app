@@ -42,16 +42,6 @@ public class DepositController {
         return calculations;
     }
 
-    @GetMapping("/get-statistics-async")
-    public Map<String, String> getStatisticsAsync(@RequestParam double rate, @RequestParam String depositId) {
-        long startTime = System.currentTimeMillis();
-        Map<String, String> calculations = depositService.getCalculationsByDateAndRateAsync(LocalDate.of(2056, 1, 1),
-                rate, depositId);
-        long endTime = System.currentTimeMillis();
-        log.info("Sequential getting statistics completed in " + (endTime - startTime) + " ms.");
-        return calculations;
-    }
-
     @PostMapping("/get-statistics-for-multiple-accounts")
     public Map<String, Map<String, String>> getStatisticsForListOfUsers(@RequestBody List<String> depositIds) {
 

@@ -23,8 +23,6 @@ public interface DepositService {
 
     Map<String, String> getCalculationsByDateAndRate(LocalDate date, double rate, String depositId);
 
-    Map<String, String> getCalculationsByDateAndRateAsync(LocalDate date, double rate, String depositId);
-
     Map<String, Map<String, String>> getCalculationsByDateAndRateForMultipleAccounts(LocalDate date, double rate, List<String> depositIds);
 
     Map<String, Map<String, String>> getCalculationsByDateAndRateForMultipleAccountsAsync(LocalDate date, double rate, List<String> depositIds);
