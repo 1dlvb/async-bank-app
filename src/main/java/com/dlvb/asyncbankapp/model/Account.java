@@ -13,6 +13,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -38,10 +39,12 @@ public class Account {
     private double balance;
 
     @JsonIgnore
+    @ToString.Exclude
     @OneToMany(mappedBy = "fromAccount", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Transaction> outgoingTransactions = new ArrayList<>();
 
     @JsonIgnore
+    @ToString.Exclude
     @OneToMany(mappedBy = "toAccount", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Transaction> incomingTransactions = new ArrayList<>();
 
