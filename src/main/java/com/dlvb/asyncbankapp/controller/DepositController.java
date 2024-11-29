@@ -33,9 +33,10 @@ public class DepositController {
     }
 
     @GetMapping("/get-statistics")
-    public Map<String, String> getStatistics(@RequestParam double rate, @RequestParam String depositId) {
+    public Map<String, String> getStatistics(@RequestParam double rate, @RequestParam String depositId,
+                                             @RequestParam int year) {
         long startTime = System.currentTimeMillis();
-        Map<String, String> calculations = depositService.getCalculationsByDateAndRate(LocalDate.of(2056, 1, 1),
+        Map<String, String> calculations = depositService.getCalculationsByDateAndRate(LocalDate.of(year, 1, 1),
                 rate, depositId);
         long endTime = System.currentTimeMillis();
         log.info("Sequential getting statistics completed in " + (endTime - startTime) + " ms.");
@@ -43,23 +44,26 @@ public class DepositController {
     }
 
     @PostMapping("/get-statistics-for-multiple-accounts")
-    public Map<String, Map<String, String>> getStatisticsForListOfUsers(@RequestBody List<String> depositIds) {
+    public Map<String, Map<String, String>> getStatisticsForListOfUsers(@RequestBody List<String> depositIds,
+                                                                        @RequestParam int year) {
 
         long startTime = System.currentTimeMillis();
         Map<String, Map<String, String>> calculations =
-                depositService.getCalculationsByDateAndRateForMultipleAccounts(LocalDate.of(2056, 1, 1), 10, depositIds);
+                depositService.getCalculationsByDateAndRateForMultipleAccounts(LocalDate.of(year, 1, 1),
+                        10, depositIds);
         long endTime = System.currentTimeMillis();
         log.info("Sequential getting statistics for multiple accounts completed in " + (endTime - startTime) + " ms.");
         return calculations;
     }
 
     @PostMapping("/get-statistics-for-multiple-accounts-async")
-    public Map<String, Map<String, String>> getStatisticsForListOfUsersAsync(@RequestBody List<String> depositIds) {
+    public Map<String, Map<String, String>> getStatisticsForListOfUsersAsync(@RequestBody List<String> depositIds,
+                                                                             @RequestParam int year) {
 
         long startTime = System.currentTimeMillis();
         Map<String, Map<String, String>> calculations =
                 depositService.getCalculationsByDateAndRateForMultipleAccountsAsync(
-                        LocalDate.of(2056, 1, 1), 10, depositIds);
+                        LocalDate.of(year, 1, 1), 10, depositIds);
         long endTime = System.currentTimeMillis();
         log.info("Asynchronous getting statistics for multiple accounts completed in " + (endTime - startTime) + " ms.");
         return calculations;

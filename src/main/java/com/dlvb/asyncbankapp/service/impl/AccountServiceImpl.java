@@ -23,6 +23,11 @@ public class AccountServiceImpl implements AccountService {
     private final AccountRepository accountRepository;
 
     @Override
+    public Account findById(String accountId) {
+        return accountRepository.findById(accountId).orElseThrow();
+    }
+
+    @Override
     public Account createAccount(CreateAccountDTO accountDTO) {
         return accountRepository.save(CreateAccountDTO.fromDTO(accountDTO));
     }
@@ -68,11 +73,6 @@ public class AccountServiceImpl implements AccountService {
             updateBalanceAsync(request.getAccountId(), request.getAmount());
         }
         return CompletableFuture.completedFuture(null);
-    }
-
-    @Override
-    public Account findById(String accountId) {
-        return accountRepository.findById(accountId).orElseThrow();
     }
 
 }
