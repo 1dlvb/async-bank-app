@@ -46,7 +46,7 @@ class TransactionServiceImplTests {
     }
 
     @Test
-    void processTransaction() {
+    void testProcessTransactionUpdatesTwoAccountsBalances() {
         Account account1 = accountService.createAccount(CreateAccountDTO.builder()
                 .owner("test")
                 .balance(100)
@@ -64,7 +64,7 @@ class TransactionServiceImplTests {
     }
 
     @Test
-    void processMultipleTransactions() {
+    void testProcessMultipleTransactionsUpdatesAccountBalances() {
         Account account1 = accountService.createAccount(CreateAccountDTO.builder()
                 .owner("test")
                 .balance(100)
@@ -100,7 +100,7 @@ class TransactionServiceImplTests {
     }
 
     @Test
-    void processMultipleTransactionsAsync() {
+    void testProcessMultipleTransactionsAsyncUpdatesAccountBalances() {
 
         Account account1 = accountService.createAccount(CreateAccountDTO.builder()
                 .owner("test")
