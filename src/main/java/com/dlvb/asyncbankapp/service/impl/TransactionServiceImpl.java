@@ -42,8 +42,8 @@ public class TransactionServiceImpl implements TransactionService {
                 .toAccount(toAccount)
                 .amount(amount)
                 .build();
-        transactionRepository.save(transaction);
 
+        transactionRepository.save(transaction);
         accountRepository.save(fromAccount);
         accountRepository.save(toAccount);
 
