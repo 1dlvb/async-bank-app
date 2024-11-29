@@ -14,8 +14,11 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.StructuredTaskScope;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 @Service
 @RequiredArgsConstructor
@@ -96,40 +99,6 @@ public class DepositServiceImpl implements DepositService {
     }
 
     @Override
-    public Map<String, String> getCalculationsByDateAndRateAsync(LocalDate date, double rate, String depositId) {
-        Deposit deposit = getDepositById(depositId);
-        double initialBalance = deposit.getBalance();
-
-        try (StructuredTaskScope.ShutdownOnFailure scope = new StructuredTaskScope.ShutdownOnFailure()) {
-
-            StructuredTaskScope.Subtask<Double> balanceActualRateFuture = scope.fork(() ->
-                    calculateDepositBalanceFixedRateByDate(date, deposit));
-
-            StructuredTaskScope.Subtask<Double> balanceByRateFuture = scope.fork(() ->
-                    calculateDepositBalanceByDateAndRate(date, rate, deposit));
-
-            StructuredTaskScope.Subtask<Map<String, Double>> topUpBalancesFuture = scope.fork(() ->
-                    calculateTopUpBalancesForStatistics(date, initialBalance, deposit));
-
-            StructuredTaskScope.Subtask<Map<String, Double>> topUpAndWithdrawBalancesFuture = scope.fork(() ->
-                    calculateTopUpAndWithdrawBalancesForStatistics(date, initialBalance, deposit));
-
-            scope.join();
-            scope.throwIfFailed();
-
-            return formatCalculationsForStatistics(
-                    balanceByRateFuture.get(),
-                    balanceActualRateFuture.get(),
-                    topUpBalancesFuture.get(),
-                    topUpAndWithdrawBalancesFuture.get()
-            );
-
-        } catch (InterruptedException | ExecutionException e) {
-            throw new IllegalStateException("Error occurred during calculations", e);
-        }
-    }
-
-    @Override
     public Map<String, Map<String, String>> getCalculationsByDateAndRateForMultipleAccounts(LocalDate date, double rate, List<String> depositIds) {
         Map<String, Map<String, String>> calculationsForId = new HashMap<>();
         for (String depositId: depositIds) {
@@ -141,25 +110,24 @@ public class DepositServiceImpl implements DepositService {
     @Override
     public Map<String, Map<String, String>> getCalculationsByDateAndRateForMultipleAccountsAsync(LocalDate date, double rate, List<String> depositIds) {
         Map<String, Map<String, String>> calculationsForId = new HashMap<>();
+        ExecutorService executorService = Executors.newFixedThreadPool(depositIds.size());
 
-        try (StructuredTaskScope.ShutdownOnFailure scope = new StructuredTaskScope.ShutdownOnFailure()) {
+        List<Callable<Map<String, String>>> tasks = depositIds.stream()
+                .map(depositId -> (Callable<Map<String, String>>) ()
+                        -> getCalculationsByDateAndRate(date, rate, depositId))
+                .toList();
 
-            List<StructuredTaskScope.Subtask<Map<String, String>>> futures = depositIds.stream()
-                    .map(depositId -> scope.fork(() -> getCalculationsByDateAndRate(date, rate, depositId)))
-                    .toList();
-
-            scope.join();
-            scope.throwIfFailed();
-
+        try {
+            List<Future<Map<String, String>>> futures = executorService.invokeAll(tasks);
             for (int i = 0; i < depositIds.size(); i++) {
-                String depositId = depositIds.get(i);
-                Map<String, String> calculationResult = futures.get(i).get();
-                calculationsForId.put(depositId, calculationResult);
+                Future<Map<String, String>> future = futures.get(i);
+                calculationsForId.put(depositIds.get(i), future.get());
             }
-
         } catch (InterruptedException | ExecutionException e) {
             Thread.currentThread().interrupt();
             throw new IllegalStateException("Error occurred during calculations", e);
+        } finally {
+            executorService.shutdown();
         }
 
         return calculationsForId;
