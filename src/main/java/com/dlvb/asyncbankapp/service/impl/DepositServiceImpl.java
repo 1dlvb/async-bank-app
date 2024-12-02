@@ -20,6 +20,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+/**
+ * Имплементация сервиса {@link DepositService}.
+ * @author Matushkin Anton
+ */
 @Service
 @RequiredArgsConstructor
 public class DepositServiceImpl implements DepositService {
@@ -133,6 +137,16 @@ public class DepositServiceImpl implements DepositService {
         return calculationsForId;
     }
 
+    /**
+     * Рассчитывает балансы с учетом различных процентов пополнений
+     * и возвращает Map с ключами вида balance_with_%d_percents_top_ups, где %d - процент пополнения
+     * относительно начальной суммы вклада.
+     *
+     * @param date дата, на которую нужно произвести расчет.
+     * @param depositBalance баланс депозита, на основе которого будут вычисляться проценты.
+     * @param deposit объект депозита для учета всех необходимых данных.
+     * @return карта с ключами, описывающими типы пополнений, и значениями — вычисленными балансами.
+     */
     private Map<String, Double> calculateTopUpBalancesForStatistics(LocalDate date, double depositBalance, Deposit deposit) {
         Map<String, Double> balances = new LinkedHashMap<>();
         for (double percentage : OPERATION_PERCENTAGE) {
@@ -143,7 +157,18 @@ public class DepositServiceImpl implements DepositService {
         return balances;
     }
 
-    private Map<String, Double> calculateTopUpAndWithdrawBalancesForStatistics(LocalDate date, double depositBalance, Deposit deposit) {
+    /**
+     * Рассчитывает балансы с учетом процентов пополнений и снятий
+     * и возвращает Map с ключами вида balance_with_%d_percents_top_ups_and_%d_percents_withdraw, где %d -
+     * процент операции относительно начальной суммы вклада.
+     *
+     * @param date дата, на которую нужно произвести расчет.
+     * @param depositBalance баланс депозита, на основе которого будут вычисляться проценты.
+     * @param deposit объект депозита для учета всех необходимых данных.
+     * @return карта с ключами, описывающими типы пополнений и снятий, и значениями — вычисленными балансами.
+     */
+    private Map<String, Double> calculateTopUpAndWithdrawBalancesForStatistics(LocalDate date, double depositBalance,
+                                                                               Deposit deposit) {
         Map<String, Double> balances = new LinkedHashMap<>();
 
         for (int i = 0; i < TOP_UP_PERCENTAGES.length; i++) {
@@ -159,6 +184,15 @@ public class DepositServiceImpl implements DepositService {
         return balances;
     }
 
+    /**
+     * Форматирует расчеты для статистики, преобразуя их в строковый формат с точностью до 3 знаков.
+     *
+     * @param balanceByRate баланс по ставке.
+     * @param balanceActualRate баланс по фактической ставке.
+     * @param topUpBalances балансы с учетом пополнений.
+     * @param topUpAndWithdrawBalances балансы с учетом пополнений и снятий.
+     * @return карта с отформатированными расчетами.
+     */
     private Map<String, String> formatCalculationsForStatistics(
             Double balanceByRate,
             Double balanceActualRate,
@@ -176,11 +210,27 @@ public class DepositServiceImpl implements DepositService {
         return formattedCalculations;
     }
 
+    /**
+     * Производит расчеты по простой по формуле сложного процента.
+     *
+     * @param initialPrincipalBalance начальный баланс депозита.
+     * @param rateInPercents ставка депозита в процентах.
+     * @param time время в годах.
+     * @return рассчитанный баланс с учетом сложных процентов.
+     */
     private double calculateSimpleCompoundInterest(double initialPrincipalBalance,
                                                    double rateInPercents, double time) {
         return initialPrincipalBalance * Math.pow((1 + 0.01 * rateInPercents), time);
     }
 
+    /**
+     * Рассчитывает коэффициент операции для формулы расчета сложного процента с пополнением/снятием
+     * по заданной ставке и времени.
+     *
+     * @param rateInPercents ставка депозита в процентах.
+     * @param time время в годах.
+     * @return коэффициент операции для депозита.
+     */
     private double calculateOperationRatio(double rateInPercents, double time) {
         return (Math.pow(1 + 0.01 * rateInPercents, time) - 1) / (0.01 * rateInPercents);
     }

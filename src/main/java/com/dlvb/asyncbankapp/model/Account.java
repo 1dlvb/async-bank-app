@@ -22,6 +22,10 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Сущность для хранения аккаунтов.
+ * @author Matushkin Anton
+ */
 @Data
 @Entity
 @Builder

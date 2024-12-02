@@ -18,6 +18,10 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
 
+/**
+ * Сущность для хранения транзакций.
+ * @author Matushkin Anton
+ */
 @Data
 @Entity
 @Builder

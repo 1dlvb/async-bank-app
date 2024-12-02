@@ -15,6 +15,11 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
+
+/**
+ * Имплементация сервиса {@link TransactionService}.
+ * @author Matushkin Anton
+ */
 @Service
 @RequiredArgsConstructor
 public class TransactionServiceImpl implements TransactionService {

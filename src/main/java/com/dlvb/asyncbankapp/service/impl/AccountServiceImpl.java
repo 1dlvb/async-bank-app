@@ -15,6 +15,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
+/**
+ * Имплементация сервиса {@link AccountService}.
+ * @author Matushkin Anton
+ */
 @Service
 @RequiredArgsConstructor
 public class AccountServiceImpl implements AccountService {
