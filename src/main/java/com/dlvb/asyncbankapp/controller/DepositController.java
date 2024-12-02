@@ -3,6 +3,10 @@ package com.dlvb.asyncbankapp.controller;
 import com.dlvb.asyncbankapp.dto.CreateOrUpdateDepositDTO;
 import com.dlvb.asyncbankapp.model.Deposit;
 import com.dlvb.asyncbankapp.service.DepositService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,16 +26,25 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api")
 @RequiredArgsConstructor
+@Tag(name = "Deposit контроллер", description = "Контроллер для работы со вкладами")
 public class DepositController {
 
     @NonNull
     private final DepositService depositService;
 
+    @Operation(summary = "Открытие нового депозита")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Депозит успешно открыт")
+    })
     @PostMapping("/open-deposit")
     public ResponseEntity<Deposit> openDeposit(@RequestBody CreateOrUpdateDepositDTO createOrUpdateDepositDTO) {
         return ResponseEntity.ok(depositService.createDeposit(createOrUpdateDepositDTO));
     }
 
+    @Operation(summary = "Получение статистики по депозиту")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Статистика успешно получена")
+    })
     @GetMapping("/get-statistics")
     public Map<String, String> getStatistics(@RequestParam double rate, @RequestParam String depositId,
                                              @RequestParam int year) {
@@ -43,6 +56,10 @@ public class DepositController {
         return calculations;
     }
 
+    @Operation(summary = "Получение статистики по нескольким депозитам")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Статистика по нескольким депозитам успешно получена")
+    })
     @PostMapping("/get-statistics-for-multiple-accounts")
     public Map<String, Map<String, String>> getStatisticsForListOfUsers(@RequestBody List<String> depositIds,
                                                                         @RequestParam int year) {
@@ -56,6 +73,10 @@ public class DepositController {
         return calculations;
     }
 
+    @Operation(summary = "Получение статистики по нескольким депозитам асинхронно")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Статистика по нескольким депозитам успешно получена асинхронно")
+    })
     @PostMapping("/get-statistics-for-multiple-accounts-async")
     public Map<String, Map<String, String>> getStatisticsForListOfUsersAsync(@RequestBody List<String> depositIds,
                                                                              @RequestParam int year) {
