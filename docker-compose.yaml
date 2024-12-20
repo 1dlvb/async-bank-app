@@ -14,6 +14,19 @@ services:
       - bank_postgres_data:/var/lib/postgresql/data
     restart: unless-stopped
 
+  async_bank_app:
+    container_name: async_bank_app
+    image: 1dlvb/async-bank-app:latest
+
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://bank_postgres:5432/bank_db
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+    ports:
+      - "8080:8080"
+    depends_on:
+      - bank_postgres
+    restart: unless-stopped
 
 volumes:
   bank_postgres_data:
