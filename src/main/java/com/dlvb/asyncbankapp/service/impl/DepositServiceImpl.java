@@ -129,6 +129,7 @@ public class DepositServiceImpl implements DepositService {
             }
         } catch (InterruptedException | ExecutionException e) {
             Thread.currentThread().interrupt();
+            executorService.shutdownNow();
             throw new IllegalStateException("Error occurred during calculations", e);
         } finally {
             executorService.shutdown();
