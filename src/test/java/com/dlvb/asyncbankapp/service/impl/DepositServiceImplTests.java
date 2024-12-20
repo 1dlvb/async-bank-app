@@ -122,7 +122,7 @@ class DepositServiceImplTests {
         double calculatedBalance = depositService.calculateDepositBalanceFixedRateByDate(
                 LocalDate.of(2056, 1, 1), deposit);
 
-        assertEquals("4764.941", String.format("%.3f", calculatedBalance));
+        assertEquals(String.format("%.3f", 4764.941), String.format("%.3f", calculatedBalance));
     }
 
     @Test
