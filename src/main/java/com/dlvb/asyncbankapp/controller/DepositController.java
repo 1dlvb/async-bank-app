@@ -90,4 +90,43 @@ public class DepositController {
         return calculations;
     }
 
+    @Operation(summary = "Расчёт волатильности")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Волатильность успешно рассчитана")
+    })
+    @GetMapping("/calculate-volatility")
+    public ResponseEntity<Double> calculateVolatility(@RequestParam long currentTime, @RequestParam int iterations) {
+
+        try {
+            long startTime = System.currentTimeMillis();
+
+            double averageVolatility = depositService.calculateVolatility(currentTime, iterations);
+
+            long endTime = System.currentTimeMillis();
+            log.info("Calculating average volatility completed in " + (endTime - startTime) + " ms.");
+
+            return ResponseEntity.ok(averageVolatility);
+
+        } catch (Exception e) {
+            log.error("Error calculating average volatility", e);
+            return ResponseEntity.status(500).build();
+        }
+
+    }
+
+    @Operation(summary = "Расчёт волатильности с использованием многопоточности")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Волатильность успешно рассчитана с использованием многопоточности")
+    })
+    @GetMapping("/calculate-volatility-multithreading")
+    public ResponseEntity<Double> calculateVolatilityMultithreading(@RequestParam long currentTime, @RequestParam int iterations) {
+        long startTime = System.currentTimeMillis();
+
+        double averageVolatility = depositService.calculateVolatilityMultithreading(currentTime, iterations);
+
+        long endTime = System.currentTimeMillis();
+        log.info("Calculating average volatility completed in " + (endTime - startTime) + " ms.");
+        return ResponseEntity.ok(averageVolatility);
+    }
+
 }
