@@ -6,6 +6,7 @@ import com.dlvb.asyncbankapp.model.Deposit;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Сервис для управления вкладами.
@@ -98,5 +99,19 @@ public interface DepositService {
      * @return карта с асинхронными расчетами для нескольких депозитов.
      */
     Map<String, Map<String, String>> getCalculationsByDateAndRateForMultipleAccountsAsync(LocalDate date, double rate, List<String> depositIds);
+
+    /**
+     * Рассчитывает волатильность на основе различных факторов.
+     * @param currentTime текущее время в миллисекундах.
+     * @return вычисленная волатильность.
+     */
+    double calculateVolatility(long currentTime, int iterations) throws ExecutionException;
+
+    /**
+     * Рассчитывает волатильность (в многопотоке) на основе различных факторов.
+     * @param currentTime текущее время в миллисекундах.
+     * @return вычисленная волатильность.
+     */
+    double calculateVolatilityMultithreading(long currentTime, int iterations);
 
 }
