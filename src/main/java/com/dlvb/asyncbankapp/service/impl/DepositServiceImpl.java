@@ -32,6 +32,7 @@ public class DepositServiceImpl implements DepositService {
     private static final double[] OPERATION_PERCENTAGE = {0.05, 0.1, 0.15, 0.2};
     private static final double[] TOP_UP_PERCENTAGES = {0.05, 0.1, 0.15, 0.2};
     private static final double[] WITHDRAW_PERCENTAGES = {0.025, 0.05, 0.1, 0.15};
+    private static final int FACTOR_COUNT = 7;
 
     @NonNull
     private final DepositRepository depositRepository;
@@ -154,17 +155,15 @@ public class DepositServiceImpl implements DepositService {
             totalVolatility += volatility;
         }
 
-        return totalVolatility / iterations;
+        return iterations == 0 ? 0 : totalVolatility / iterations;
     }
 
     @Override
     public double calculateVolatilityMultithreading(long currentTime, int iterations) {
-        int factorCount = 7;
+        double[] results = new double[FACTOR_COUNT];
+        CountDownLatch latch = new CountDownLatch(FACTOR_COUNT);
 
-        double[] results = new double[factorCount];
-        CountDownLatch latch = new CountDownLatch(factorCount);
-
-        ExecutorService executorService = getExecutorService(currentTime, results, factorCount, latch);
+        ExecutorService executorService = getExecutorService(currentTime, results, latch);
 
         try {
             latch.await();
@@ -183,10 +182,10 @@ public class DepositServiceImpl implements DepositService {
         }
 
         executorService.shutdown();
-        return totalVolatility / iterations;
+        return iterations == 0 ? 0 : totalVolatility / iterations;
     }
 
-    private ExecutorService getExecutorService(long currentTime, double[] results, int factorCount, CountDownLatch latch) {
+    private ExecutorService getExecutorService(long currentTime, double[] results, CountDownLatch latch) {
         Runnable[] tasks = new Runnable[]{
                 () -> results[0] = getRandomVolatility(),
                 () -> results[1] = getTrendVolatility(currentTime),
@@ -199,7 +198,7 @@ public class DepositServiceImpl implements DepositService {
 
         ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 
-        for (int i = 0; i < factorCount; i++) {
+        for (int i = 0; i < FACTOR_COUNT; i++) {
             final int index = i;
             executorService.submit(() -> {
                 tasks[index].run();
