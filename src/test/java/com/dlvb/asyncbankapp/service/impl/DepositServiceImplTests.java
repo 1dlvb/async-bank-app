@@ -201,24 +201,36 @@ class DepositServiceImplTests {
     }
 
     @Test
-    void testCalculateVolatilityMultithreadingReturnsCorrectValue() {
-        assertTrue(depositService.calculateVolatilityMultithreading(System.currentTimeMillis(), 100) > 0);
+    void testCalculateVolatilityWithRunnableReturnsCorrectValue() {
+        assertTrue(depositService.calculateVolatilityWithRunnable(System.currentTimeMillis(), 100) > 0);
     }
 
     @Test
-    void testCalculateVolatilityMultithreadingHandlesZeroIterations() {
-        assertEquals(0, depositService.calculateVolatilityMultithreading(System.currentTimeMillis(), 0));
+    void testCalculateVolatilityWithRunnableHandlesZeroIterations() {
+        assertEquals(0, depositService.calculateVolatilityWithRunnable(System.currentTimeMillis(), 0));
     }
 
     @Test
-    void testCalculateVolatilityAndMultithreadingResultsMatch() {
+    void testCalculateVolatilityFutureReturnsCorrectValue() throws Exception {
+        assertTrue(depositService.calculateVolatilityFuture(System.currentTimeMillis(), 100) > 0);
+    }
+
+    @Test
+    void testCalculateVolatilityFutureHandlesZeroIterations() throws Exception {
+        assertEquals(0, depositService.calculateVolatilityFuture(System.currentTimeMillis(), 0));
+    }
+
+    @Test
+    void testCalculateVolatilityAndRunnableAndParallelStreamResultsMatch() throws Exception {
         long currentTime = System.currentTimeMillis();
         int iterations = 50;
 
         double singleThreadResult = depositService.calculateVolatility(currentTime, iterations);
-        double multiThreadResult = depositService.calculateVolatilityMultithreading(currentTime, iterations);
+        double multiThreadWithRunnableResult = depositService.calculateVolatilityWithRunnable(currentTime, iterations);
+        double multiThreadFutureStreamResult = depositService.calculateVolatilityFuture(currentTime, iterations);
 
-        assertEquals(singleThreadResult, multiThreadResult, 0.5);
+        assertEquals(singleThreadResult, multiThreadWithRunnableResult, 0.5);
+        assertEquals(singleThreadResult, multiThreadFutureStreamResult, 0.5);
     }
 
 }
