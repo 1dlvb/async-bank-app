@@ -34,6 +34,8 @@ public class DepositServiceImpl implements DepositService {
     private static final double[] TOP_UP_PERCENTAGES = {0.05, 0.1, 0.15, 0.2};
     private static final double[] WITHDRAW_PERCENTAGES = {0.025, 0.05, 0.1, 0.15};
     private static final int FACTOR_COUNT = 7;
+    private static final int NUMBER_OF_THREADS = 2;
+
 
     @NonNull
     private final DepositRepository depositRepository;
@@ -161,11 +163,10 @@ public class DepositServiceImpl implements DepositService {
 
     @Override
     public double calculateVolatilityFuture(long currentTime, int iterations) throws ExecutionException {
-        int numThreads = 2;
-        ExecutorService executor = Executors.newFixedThreadPool(numThreads);
+        ExecutorService executor = Executors.newFixedThreadPool(NUMBER_OF_THREADS);
         List<Future<Double>> futures = new ArrayList<>();
 
-        calculateBatchVolatility(currentTime, iterations, numThreads, futures, executor);
+        calculateBatchVolatility(currentTime, iterations, futures, executor);
 
         double totalVolatility = 0;
         try {
@@ -207,12 +208,12 @@ public class DepositServiceImpl implements DepositService {
         return iterations == 0 ? 0 : totalVolatility / iterations;
     }
 
-    private void calculateBatchVolatility(long currentTime, int iterations, int numThreads, List<Future<Double>> futures, ExecutorService executor) {
-        int batchSize = iterations / numThreads;
+    private void calculateBatchVolatility(long currentTime, int iterations, List<Future<Double>> futures, ExecutorService executor) {
+        int batchSize = iterations / NUMBER_OF_THREADS;
 
-        for (int i = 0; i < numThreads; i++) {
+        for (int i = 0; i < NUMBER_OF_THREADS; i++) {
             final int start = i * batchSize;
-            final int end = (i == numThreads - 1) ? iterations : (i + 1) * batchSize;
+            final int end = (i == NUMBER_OF_THREADS - 1) ? iterations : (i + 1) * batchSize;
 
             futures.add(executor.submit(() -> {
                 double batchVolatility = 0;
