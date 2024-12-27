@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -159,7 +160,28 @@ public class DepositServiceImpl implements DepositService {
     }
 
     @Override
-    public double calculateVolatilityMultithreading(long currentTime, int iterations) {
+    public double calculateVolatilityFuture(long currentTime, int iterations) throws ExecutionException {
+        int numThreads = 2;
+        ExecutorService executor = Executors.newFixedThreadPool(numThreads);
+        List<Future<Double>> futures = new ArrayList<>();
+
+        calculateBatchVolatility(currentTime, iterations, numThreads, futures, executor);
+
+        double totalVolatility = 0;
+        try {
+            for (Future<Double> future : futures) {
+                totalVolatility += future.get();
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+
+        executor.shutdown();
+        return iterations == 0 ? 0 : totalVolatility / iterations;
+    }
+
+    @Override
+    public double calculateVolatilityWithRunnable(long currentTime, int iterations) {
         double[] results = new double[FACTOR_COUNT];
         CountDownLatch latch = new CountDownLatch(FACTOR_COUNT);
 
@@ -183,6 +205,29 @@ public class DepositServiceImpl implements DepositService {
 
         executorService.shutdown();
         return iterations == 0 ? 0 : totalVolatility / iterations;
+    }
+
+    private void calculateBatchVolatility(long currentTime, int iterations, int numThreads, List<Future<Double>> futures, ExecutorService executor) {
+        int batchSize = iterations / numThreads;
+
+        for (int i = 0; i < numThreads; i++) {
+            final int start = i * batchSize;
+            final int end = (i == numThreads - 1) ? iterations : (i + 1) * batchSize;
+
+            futures.add(executor.submit(() -> {
+                double batchVolatility = 0;
+                for (int j = start; j < end; j++) {
+                    batchVolatility += getRandomVolatility()
+                            + getTrendVolatility(currentTime)
+                            + getExponentialVolatility(currentTime)
+                            + calculateMovingAverage(15)
+                            + getCrossCurrencyVolatility()
+                            + getSeasonalVolatility()
+                            + predictCurrencyRate();
+                }
+                return batchVolatility;
+            }));
+        }
     }
 
     private ExecutorService getExecutorService(long currentTime, double[] results, CountDownLatch latch) {

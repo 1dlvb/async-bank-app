@@ -108,10 +108,17 @@ public interface DepositService {
     double calculateVolatility(long currentTime, int iterations) throws ExecutionException;
 
     /**
-     * Рассчитывает волатильность (в многопотоке) на основе различных факторов.
+     * Рассчитывает волатильность (используя Runnable) на основе различных факторов.
      * @param currentTime текущее время в миллисекундах.
      * @return вычисленная волатильность.
      */
-    double calculateVolatilityMultithreading(long currentTime, int iterations);
+    double calculateVolatilityWithRunnable(long currentTime, int iterations);
+
+    /**
+     * Рассчитывает волатильность, используя Future, на основе различных факторов.
+     * @param currentTime текущее время в миллисекундах.
+     * @return вычисленная волатильность.
+     */
+    double calculateVolatilityFuture(long currentTime, int iterations) throws ExecutionException;
 
 }
