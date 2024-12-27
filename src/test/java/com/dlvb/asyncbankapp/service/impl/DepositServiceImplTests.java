@@ -21,6 +21,7 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest
 @Testcontainers
@@ -189,5 +190,35 @@ class DepositServiceImplTests {
         assertEquals(2, calculations.size());
     }
 
+    @Test
+    void testCalculateVolatilityReturnsCorrectValue() {
+        assertTrue(depositService.calculateVolatility(System.currentTimeMillis(), 100) > 0);
+    }
+
+    @Test
+    void testCalculateVolatilityHandlesZeroIterations() {
+        assertEquals(0, depositService.calculateVolatility(System.currentTimeMillis(), 0));
+    }
+
+    @Test
+    void testCalculateVolatilityMultithreadingReturnsCorrectValue() {
+        assertTrue(depositService.calculateVolatilityMultithreading(System.currentTimeMillis(), 100) > 0);
+    }
+
+    @Test
+    void testCalculateVolatilityMultithreadingHandlesZeroIterations() {
+        assertEquals(0, depositService.calculateVolatilityMultithreading(System.currentTimeMillis(), 0));
+    }
+
+    @Test
+    void testCalculateVolatilityAndMultithreadingResultsMatch() {
+        long currentTime = System.currentTimeMillis();
+        int iterations = 50;
+
+        double singleThreadResult = depositService.calculateVolatility(currentTime, iterations);
+        double multiThreadResult = depositService.calculateVolatilityMultithreading(currentTime, iterations);
+
+        assertEquals(singleThreadResult, multiThreadResult, 0.5);
+    }
 
 }

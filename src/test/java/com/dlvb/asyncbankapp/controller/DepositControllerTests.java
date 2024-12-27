@@ -18,6 +18,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
 
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -139,5 +140,54 @@ class DepositControllerTests {
                 .getCalculationsByDateAndRateForMultipleAccountsAsync(LocalDate.of(year, 1, 1), 10, depositIds);
     }
 
+    @Test
+    void testCalculateVolatilityReturnsProperVolatility() throws Exception {
+        long currentTime = System.currentTimeMillis();
+        int iterations = 100;
+        double expectedVolatility = 5.5;
+
+        when(depositService.calculateVolatility(currentTime, iterations)).thenReturn(expectedVolatility);
+
+        mockMvc.perform(get("/api/calculate-volatility")
+                        .param("currentTime", String.valueOf(currentTime))
+                        .param("iterations", String.valueOf(iterations)))
+                .andExpect(status().isOk())
+                .andExpect(content().string(String.valueOf(expectedVolatility)));
+
+        verify(depositService, times(1)).calculateVolatility(currentTime, iterations);
+    }
+    @Test
+    void testCalculateVolatilityWhenExecutionException() throws Exception {
+        long currentTime = System.currentTimeMillis();
+        int iterations = 100;
+
+        when(depositService.calculateVolatility(currentTime, iterations))
+                .thenThrow(new ExecutionException("Execution failed", new RuntimeException()));
+
+        mockMvc.perform(get("/calculate-volatility")
+                        .param("currentTime", String.valueOf(currentTime))
+                        .param("iterations", String.valueOf(iterations)))
+                .andExpect(status().isInternalServerError());
+
+        verify(depositService, times(1)).calculateVolatility(currentTime, iterations);
+    }
+
+
+    @Test
+    void testCalculateVolatilityMultithreadingReturnsProperVolatility() throws Exception {
+        long currentTime = System.currentTimeMillis();
+        int iterations = 100;
+        double expectedVolatility = 10.5;
+
+        when(depositService.calculateVolatilityMultithreading(currentTime, iterations)).thenReturn(expectedVolatility);
+
+        mockMvc.perform(get("/api/calculate-volatility-multithreading")
+                        .param("currentTime", String.valueOf(currentTime))
+                        .param("iterations", String.valueOf(iterations)))
+                .andExpect(status().isOk())
+                .andExpect(content().string(String.valueOf(expectedVolatility)));
+
+        verify(depositService, times(1)).calculateVolatilityMultithreading(currentTime, iterations);
+    }
 
 }
