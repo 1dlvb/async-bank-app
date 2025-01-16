@@ -201,7 +201,6 @@ class TransactionServiceImplTests {
 
         executorService.invokeAll(tasks);
         executorService.shutdown();
-        executorService.awaitTermination(1, TimeUnit.MINUTES);
 
         Account finalFromAccount = accountService.findById(account1.getId());
         Account finalToAccount = accountService.findById(account2.getId());
