@@ -37,4 +37,14 @@ public interface TransactionService {
      */
     CompletableFuture<Void> processMultipleTransactionsAsync(List<TransactionDTO> transactions);
 
+
+    /**
+     * Обрабатывает перевод в безопасном режиме. С локами.
+     *
+     * @param fromAccountId идентификатор аккаунта отправителя.
+     * @param toAccountId идентификатор аккаунта получателя.
+     * @param amount сумма транзакции.
+     */
+    void safeLockTransfer(String fromAccountId, String toAccountId, double amount);
+
 }
