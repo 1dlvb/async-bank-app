@@ -162,13 +162,8 @@ class TransactionServiceImplTests {
 
         ExecutorService executor = Executors.newFixedThreadPool(2);
 
-        Future<?> future1 = executor.submit(() -> {
-            transactionService.safeLockTransfer(account1.getId(), account2.getId(), 100);
-        });
-
-        Future<?> future2 = executor.submit(() -> {
-            transactionService. safeLockTransfer(account2.getId(), account1.getId(), 100);
-        });
+        Future<?> future1 = executor.submit(() -> transactionService.safeLockTransfer(account1.getId(), account2.getId(), 100));
+        Future<?> future2 = executor.submit(() -> transactionService. safeLockTransfer(account2.getId(), account1.getId(), 100));
 
         future1.get(5, TimeUnit.SECONDS);
         future2.get(5, TimeUnit.SECONDS);
