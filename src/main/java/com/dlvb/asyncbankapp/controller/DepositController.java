@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 @Slf4j
 @RestController
@@ -88,6 +89,66 @@ public class DepositController {
         long endTime = System.currentTimeMillis();
         log.info("Asynchronous getting statistics for multiple accounts completed in " + (endTime - startTime) + " ms.");
         return calculations;
+    }
+
+    @Operation(summary = "Расчёт волатильности")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Волатильность успешно рассчитана")
+    })
+    @GetMapping("/calculate-volatility")
+    public ResponseEntity<Double> calculateVolatility(@RequestParam long currentTime, @RequestParam int iterations) {
+
+        try {
+            long startTime = System.currentTimeMillis();
+
+            double averageVolatility = depositService.calculateVolatility(currentTime, iterations);
+
+            long endTime = System.currentTimeMillis();
+            log.info("Calculating average volatility completed in " + (endTime - startTime) + " ms.");
+
+            return ResponseEntity.ok(averageVolatility);
+
+        } catch (Exception e) {
+            log.error("Error calculating average volatility", e);
+            return ResponseEntity.status(500).build();
+        }
+
+    }
+
+    @Operation(summary = "Расчёт волатильности с использованием runnable")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Волатильность успешно рассчитана с использованием runnable")
+    })
+    @GetMapping("/calculate-volatility-runnable")
+    public ResponseEntity<Double> calculateVolatilityRunnable(@RequestParam long currentTime, @RequestParam int iterations) {
+        long startTime = System.currentTimeMillis();
+
+        double averageVolatility = depositService.calculateVolatilityWithRunnable(currentTime, iterations);
+
+        long endTime = System.currentTimeMillis();
+        log.info("Calculating average volatility(runnable) completed in " + (endTime - startTime) + " ms.");
+        return ResponseEntity.ok(averageVolatility);
+    }
+
+    @Operation(summary = "Расчёт волатильности с использованием future")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Волатильность успешно рассчитана с использованием future")
+    })
+    @GetMapping("/calculate-volatility-future")
+    public ResponseEntity<Double> calculateVolatilityFuture(@RequestParam long currentTime, @RequestParam int iterations) {
+
+        try {
+            long startTime = System.currentTimeMillis();
+
+            double averageVolatility = depositService.calculateVolatilityFuture(currentTime, iterations);
+
+            long endTime = System.currentTimeMillis();
+            log.info("Calculating average volatility(future) completed in " + (endTime - startTime) + " ms.");
+            return ResponseEntity.ok(averageVolatility);
+        } catch (ExecutionException e) {
+            return ResponseEntity.status(500).build();
+        }
+
     }
 
 }

@@ -21,6 +21,7 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest
 @Testcontainers
@@ -189,5 +190,47 @@ class DepositServiceImplTests {
         assertEquals(2, calculations.size());
     }
 
+    @Test
+    void testCalculateVolatilityReturnsCorrectValue() {
+        assertTrue(depositService.calculateVolatility(System.currentTimeMillis(), 100) > 0);
+    }
+
+    @Test
+    void testCalculateVolatilityHandlesZeroIterations() {
+        assertEquals(0, depositService.calculateVolatility(System.currentTimeMillis(), 0));
+    }
+
+    @Test
+    void testCalculateVolatilityWithRunnableReturnsCorrectValue() {
+        assertTrue(depositService.calculateVolatilityWithRunnable(System.currentTimeMillis(), 100) > 0);
+    }
+
+    @Test
+    void testCalculateVolatilityWithRunnableHandlesZeroIterations() {
+        assertEquals(0, depositService.calculateVolatilityWithRunnable(System.currentTimeMillis(), 0));
+    }
+
+    @Test
+    void testCalculateVolatilityFutureReturnsCorrectValue() throws Exception {
+        assertTrue(depositService.calculateVolatilityFuture(System.currentTimeMillis(), 100) > 0);
+    }
+
+    @Test
+    void testCalculateVolatilityFutureHandlesZeroIterations() throws Exception {
+        assertEquals(0, depositService.calculateVolatilityFuture(System.currentTimeMillis(), 0));
+    }
+
+    @Test
+    void testCalculateVolatilityAndRunnableAndParallelStreamResultsMatch() throws Exception {
+        long currentTime = System.currentTimeMillis();
+        int iterations = 50;
+
+        double singleThreadResult = depositService.calculateVolatility(currentTime, iterations);
+        double multiThreadWithRunnableResult = depositService.calculateVolatilityWithRunnable(currentTime, iterations);
+        double multiThreadFutureStreamResult = depositService.calculateVolatilityFuture(currentTime, iterations);
+
+        assertEquals(singleThreadResult, multiThreadWithRunnableResult, 0.5);
+        assertEquals(singleThreadResult, multiThreadFutureStreamResult, 0.5);
+    }
 
 }

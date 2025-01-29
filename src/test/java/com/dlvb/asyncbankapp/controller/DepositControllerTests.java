@@ -18,6 +18,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
 
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -139,5 +140,88 @@ class DepositControllerTests {
                 .getCalculationsByDateAndRateForMultipleAccountsAsync(LocalDate.of(year, 1, 1), 10, depositIds);
     }
 
+    @Test
+    void testCalculateVolatilityReturnsProperVolatility() throws Exception {
+        long currentTime = System.currentTimeMillis();
+        int iterations = 100;
+        double expectedVolatility = 5.5;
+
+        when(depositService.calculateVolatility(currentTime, iterations)).thenReturn(expectedVolatility);
+
+        mockMvc.perform(get("/api/calculate-volatility")
+                        .param("currentTime", String.valueOf(currentTime))
+                        .param("iterations", String.valueOf(iterations)))
+                .andExpect(status().isOk())
+                .andExpect(content().string(String.valueOf(expectedVolatility)));
+
+        verify(depositService, times(1)).calculateVolatility(currentTime, iterations);
+    }
+    @Test
+    void testCalculateVolatilityWhenExecutionException() throws Exception {
+        long currentTime = System.currentTimeMillis();
+        int iterations = 100;
+
+        when(depositService.calculateVolatility(currentTime, iterations))
+                .thenThrow(new ExecutionException("Execution failed", new RuntimeException()));
+
+        mockMvc.perform(get("/api/calculate-volatility")
+                        .param("currentTime", String.valueOf(currentTime))
+                        .param("iterations", String.valueOf(iterations)))
+                .andExpect(status().isInternalServerError());
+
+        verify(depositService, times(1)).calculateVolatility(currentTime, iterations);
+    }
+
+
+    @Test
+    void testCalculateVolatilityRunnableReturnsProperVolatility() throws Exception {
+        long currentTime = System.currentTimeMillis();
+        int iterations = 100;
+        double expectedVolatility = 10.5;
+
+        when(depositService.calculateVolatilityWithRunnable(currentTime, iterations)).thenReturn(expectedVolatility);
+
+        mockMvc.perform(get("/api/calculate-volatility-runnable")
+                        .param("currentTime", String.valueOf(currentTime))
+                        .param("iterations", String.valueOf(iterations)))
+                .andExpect(status().isOk())
+                .andExpect(content().string(String.valueOf(expectedVolatility)));
+
+        verify(depositService, times(1)).calculateVolatilityWithRunnable(currentTime, iterations);
+    }
+
+    @Test
+    void testCalculateVolatilityFutureWhenExecutionException() throws Exception {
+        long currentTime = System.currentTimeMillis();
+        int iterations = 100;
+
+        when(depositService.calculateVolatilityFuture(currentTime, iterations))
+                .thenThrow(new ExecutionException("Execution failed", new RuntimeException()));
+
+        mockMvc.perform(get("/api/calculate-volatility-future")
+                        .param("currentTime", String.valueOf(currentTime))
+                        .param("iterations", String.valueOf(iterations)))
+                .andExpect(status().isInternalServerError());
+
+        verify(depositService, times(1)).calculateVolatilityFuture(currentTime, iterations);
+    }
+
+
+    @Test
+    void testCalculateVolatilityFutureReturnsProperVolatility() throws Exception {
+        long currentTime = System.currentTimeMillis();
+        int iterations = 100;
+        double expectedVolatility = 10.5;
+
+        when(depositService.calculateVolatilityFuture(currentTime, iterations)).thenReturn(expectedVolatility);
+
+        mockMvc.perform(get("/api/calculate-volatility-future")
+                        .param("currentTime", String.valueOf(currentTime))
+                        .param("iterations", String.valueOf(iterations)))
+                .andExpect(status().isOk())
+                .andExpect(content().string(String.valueOf(expectedVolatility)));
+
+        verify(depositService, times(1)).calculateVolatilityFuture(currentTime, iterations);
+    }
 
 }

@@ -10,11 +10,13 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -31,6 +33,8 @@ public class DepositServiceImpl implements DepositService {
     private static final double[] OPERATION_PERCENTAGE = {0.05, 0.1, 0.15, 0.2};
     private static final double[] TOP_UP_PERCENTAGES = {0.05, 0.1, 0.15, 0.2};
     private static final double[] WITHDRAW_PERCENTAGES = {0.025, 0.05, 0.1, 0.15};
+    private static final int FACTOR_COUNT = 7;
+    private static final int NUMBER_OF_THREADS = 2;
 
 
     @NonNull
@@ -138,16 +142,118 @@ public class DepositServiceImpl implements DepositService {
         return calculationsForId;
     }
 
-    /**
-     * Рассчитывает балансы с учетом различных процентов пополнений
-     * и возвращает Map с ключами вида balance_with_%d_percents_top_ups, где %d - процент пополнения
-     * относительно начальной суммы вклада.
-     *
-     * @param date дата, на которую нужно произвести расчет.
-     * @param depositBalance баланс депозита, на основе которого будут вычисляться проценты.
-     * @param deposit объект депозита для учета всех необходимых данных.
-     * @return карта с ключами, описывающими типы пополнений, и значениями — вычисленными балансами.
-     */
+    @Override
+    public double calculateVolatility(long currentTime, int iterations) {
+        double totalVolatility = 0;
+
+        for (int i = 0; i < iterations; i++) {
+            double volatility = getRandomVolatility()
+                    + getTrendVolatility(currentTime)
+                    + getExponentialVolatility(currentTime)
+                    + calculateMovingAverage(15)
+                    + getCrossCurrencyVolatility()
+                    + getSeasonalVolatility()
+                    + predictCurrencyRate();
+
+            totalVolatility += volatility;
+        }
+
+        return iterations == 0 ? 0 : totalVolatility / iterations;
+    }
+
+    @Override
+    public double calculateVolatilityFuture(long currentTime, int iterations) throws ExecutionException {
+        ExecutorService executor = Executors.newFixedThreadPool(NUMBER_OF_THREADS);
+        List<Future<Double>> futures = new ArrayList<>();
+
+        calculateBatchVolatility(currentTime, iterations, futures, executor);
+
+        double totalVolatility = 0;
+        try {
+            for (Future<Double> future : futures) {
+                totalVolatility += future.get();
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+
+        executor.shutdown();
+        return iterations == 0 ? 0 : totalVolatility / iterations;
+    }
+
+    @Override
+    public double calculateVolatilityWithRunnable(long currentTime, int iterations) {
+        double[] results = new double[FACTOR_COUNT];
+        CountDownLatch latch = new CountDownLatch(FACTOR_COUNT);
+
+        ExecutorService executorService = getExecutorService(currentTime, results, latch);
+
+        try {
+            latch.await();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+
+        double volatilityForSingleCalculation = 0;
+        for (double result : results) {
+            volatilityForSingleCalculation += result;
+        }
+
+        double totalVolatility = 0;
+        for (int i = 0; i < iterations; i++) {
+            totalVolatility += volatilityForSingleCalculation;
+        }
+
+        executorService.shutdown();
+        return iterations == 0 ? 0 : totalVolatility / iterations;
+    }
+
+    private void calculateBatchVolatility(long currentTime, int iterations, List<Future<Double>> futures, ExecutorService executor) {
+        int batchSize = iterations / NUMBER_OF_THREADS;
+
+        for (int i = 0; i < NUMBER_OF_THREADS; i++) {
+            final int start = i * batchSize;
+            final int end = (i == NUMBER_OF_THREADS - 1) ? iterations : (i + 1) * batchSize;
+
+            futures.add(executor.submit(() -> {
+                double batchVolatility = 0;
+                for (int j = start; j < end; j++) {
+                    batchVolatility += getRandomVolatility()
+                            + getTrendVolatility(currentTime)
+                            + getExponentialVolatility(currentTime)
+                            + calculateMovingAverage(15)
+                            + getCrossCurrencyVolatility()
+                            + getSeasonalVolatility()
+                            + predictCurrencyRate();
+                }
+                return batchVolatility;
+            }));
+        }
+    }
+
+    private ExecutorService getExecutorService(long currentTime, double[] results, CountDownLatch latch) {
+        Runnable[] tasks = new Runnable[]{
+                () -> results[0] = getRandomVolatility(),
+                () -> results[1] = getTrendVolatility(currentTime),
+                () -> results[2] = getExponentialVolatility(currentTime),
+                () -> results[3] = calculateMovingAverage(15),
+                () -> results[4] = getCrossCurrencyVolatility(),
+                () -> results[5] = getSeasonalVolatility(),
+                () -> results[6] = predictCurrencyRate()
+        };
+
+        ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+
+        for (int i = 0; i < FACTOR_COUNT; i++) {
+            final int index = i;
+            executorService.submit(() -> {
+                tasks[index].run();
+                latch.countDown();
+            });
+        }
+        return executorService;
+    }
+
     private Map<String, Double> calculateTopUpBalancesForStatistics(LocalDate date, double depositBalance, Deposit deposit) {
         Map<String, Double> balances = new LinkedHashMap<>();
         for (double percentage : OPERATION_PERCENTAGE) {
@@ -158,16 +264,6 @@ public class DepositServiceImpl implements DepositService {
         return balances;
     }
 
-    /**
-     * Рассчитывает балансы с учетом процентов пополнений и снятий
-     * и возвращает Map с ключами вида balance_with_%d_percents_top_ups_and_%d_percents_withdraw, где %d -
-     * процент операции относительно начальной суммы вклада.
-     *
-     * @param date дата, на которую нужно произвести расчет.
-     * @param depositBalance баланс депозита, на основе которого будут вычисляться проценты.
-     * @param deposit объект депозита для учета всех необходимых данных.
-     * @return карта с ключами, описывающими типы пополнений и снятий, и значениями — вычисленными балансами.
-     */
     private Map<String, Double> calculateTopUpAndWithdrawBalancesForStatistics(LocalDate date, double depositBalance,
                                                                                Deposit deposit) {
         Map<String, Double> balances = new LinkedHashMap<>();
@@ -185,15 +281,6 @@ public class DepositServiceImpl implements DepositService {
         return balances;
     }
 
-    /**
-     * Форматирует расчеты для статистики, преобразуя их в строковый формат с точностью до 3 знаков.
-     *
-     * @param balanceByRate баланс по ставке.
-     * @param balanceActualRate баланс по фактической ставке.
-     * @param topUpBalances балансы с учетом пополнений.
-     * @param topUpAndWithdrawBalances балансы с учетом пополнений и снятий.
-     * @return карта с отформатированными расчетами.
-     */
     private Map<String, String> formatCalculationsForStatistics(
             Double balanceByRate,
             Double balanceActualRate,
@@ -211,29 +298,47 @@ public class DepositServiceImpl implements DepositService {
         return formattedCalculations;
     }
 
-    /**
-     * Производит расчеты по простой по формуле сложного процента.
-     *
-     * @param initialPrincipalBalance начальный баланс депозита.
-     * @param rateInPercents ставка депозита в процентах.
-     * @param time время в годах.
-     * @return рассчитанный баланс с учетом сложных процентов.
-     */
     private double calculateSimpleCompoundInterest(double initialPrincipalBalance,
                                                    double rateInPercents, double time) {
         return initialPrincipalBalance * Math.pow((1 + 0.01 * rateInPercents), time);
     }
 
-    /**
-     * Рассчитывает коэффициент операции для формулы расчета сложного процента с пополнением/снятием
-     * по заданной ставке и времени.
-     *
-     * @param rateInPercents ставка депозита в процентах.
-     * @param time время в годах.
-     * @return коэффициент операции для депозита.
-     */
     private double calculateOperationRatio(double rateInPercents, double time) {
         return (Math.pow(1 + 0.01 * rateInPercents, time) - 1) / (0.01 * rateInPercents);
+    }
+
+    private double getRandomVolatility() {
+        return Math.random() * 0.1 - 0.05;
+    }
+
+    private double getTrendVolatility(long currentTime) {
+        return Math.cos(currentTime / 1000.0) * 0.02;
+    }
+
+    private double getExponentialVolatility(long currentTime) {
+        double factor = currentTime / 10000.0;
+        if (factor > 10) {
+            factor = 10;
+        }
+        return Math.min(Math.exp(factor) * 0.01, 0.1);
+    }
+
+    private double calculateMovingAverage(double currentRate) {
+        return currentRate * 0.98 + 0.02;
+    }
+
+    private double getCrossCurrencyVolatility() {
+        double usdRate = 1.1;
+        double eurRate = 1.2;
+        return (usdRate / eurRate) * 0.15;
+    }
+
+    private double getSeasonalVolatility() {
+        return 0.01;
+    }
+
+    private double predictCurrencyRate() {
+        return 1.15;
     }
 
 }
