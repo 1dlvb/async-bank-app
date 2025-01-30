@@ -48,6 +48,11 @@ jobs:
         run: |
           mkdir -p $HOME/.kube
           echo "${{ secrets.KUBE_CONFIG }}" > $HOME/.kube/config
+          # Set the context to github-actions-context
+          kubectl config set-context github-actions-context \
+            --cluster=kubernetes \
+            --user=github-user \
+            --namespace=github-actions
           kubectl config use-context github-actions-context
           kubectl config current-context
           kubectl config get-contexts
