@@ -48,11 +48,7 @@ jobs:
       - name: Set up Kubeconfig
         run: |
           mkdir -p $HOME/.kube
-          echo "${{ secrets.KUBE_CONFIG }}" | base64 --decode > $HOME/.kube/config
-          
-          kubectl config set-cluster my-cluster --server=https://172.16.0.2:6443
-  
-          kubectl config set-context Default --cluster=my-cluster --user=my-user --namespace=async-bank-app
+          echo "${{ secrets.KUBE_CONFIG }}" > $HOME/.kube/config
           kubectl config use-context Default
           kubectl config current-context
           kubectl config get-contexts
