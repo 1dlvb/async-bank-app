@@ -48,8 +48,7 @@ jobs:
         run: |
           mkdir -p $HOME/.kube
           echo "${{ secrets.KUBE_CONFIG }}" > $HOME/.kube/config
-          # Проверяем, что контекст установлен правильно
-          kubectl config use-context kubernetes-admin@kubernetes
+          kubectl config use-context github-actions-context
           kubectl config current-context
           kubectl config get-contexts
 
