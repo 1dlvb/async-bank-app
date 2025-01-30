@@ -49,7 +49,7 @@ jobs:
         run: |
           mkdir -p $HOME/.kube
           echo "${{ secrets.KUBE_CONFIG }}" | base64 --decode > $HOME/.kube/config
-          kubectl config use-context $(kubectl config current-context)
+          kubectl config use-context Default
           kubectl config current-context
           kubectl config get-contexts
 
