@@ -42,9 +42,9 @@ jobs:
 
       - name: Set up Kubeconfig
         run: |
-          mkdir -p ~/.kube
-          echo "${{ secrets.K8S_SERTIFICATE }}" > ~/.kube/ca.crt
-          kubectl config set-cluster kubernetes --certificate-authority=~/.kube/ca.crt --server=https://kubernetes.docker.internal:6443
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.K8S_CERTIFICATE }}" > $HOME/.kube/ca.crt
+          kubectl config set-cluster kubernetes --certificate-authority=$HOME/.kube/ca.crt --server=https://kubernetes.docker.internal:6443
           kubectl config set-credentials new-open-access --token=${{ secrets.K8S_TOKEN }}
           kubectl config set-context kubernetes --cluster=kubernetes --user=new-open-access
           kubectl config use-context kubernetes
@@ -53,3 +53,4 @@ jobs:
         run: |
           kubectl apply -f k8s/deployment.yaml --validate=false
           kubectl rollout status deployment/async-bank-app -n default
+  
