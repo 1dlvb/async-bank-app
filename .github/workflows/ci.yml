@@ -48,6 +48,7 @@ jobs:
         run: |
           mkdir -p $HOME/.kube
           echo "${{ secrets.KUBE_CONFIG }}" > $HOME/.kube/config
+          kubectl config use-context kubernetes-admin@kubernetes
 
       - name: Create Kubernetes Namespace
         run: |
