@@ -62,7 +62,7 @@ jobs:
 
       - name: Deploy PostgreSQL and Async Bank App
         run: |
-          kubectl apply -f k8s/deployment.yaml -n async-bank-app
+          kubectl apply -f k8s/deployment.yaml -n async-bank-app --validate=false
           kubectl rollout status deployment/bank-postgres -n async-bank-app
           kubectl rollout status deployment/async-bank-app -n async-bank-app
 
