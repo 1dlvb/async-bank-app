@@ -35,6 +35,7 @@ jobs:
           registry: docker.io
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
+          tags: ${{ github.sha }}
 
   deploy:
     runs-on: ubuntu-latest
@@ -47,26 +48,22 @@ jobs:
       - name: Set up Kubeconfig
         run: |
           mkdir -p $HOME/.kube
-          echo "${{ secrets.KUBE_CONFIG }}" > $HOME/.kube/config
-          # Set the context to github-actions-context
-          kubectl config set-context github-actions-context \
-            --cluster=kubernetes \
-            --user=github-user \
-            --namespace=github-actions
-          kubectl config use-context github-actions-context
+          echo "${{ secrets.KUBE_CONFIG }}" | base64 --decode > $HOME/.kube/config
+          kubectl config use-context $(kubectl config current-context)
           kubectl config current-context
           kubectl config get-contexts
 
       - name: Create Kubernetes Namespace (if not exists)
         run: |
-          kubectl apply -f k8s/namespace.yaml || echo "Namespace already exists."
+          kubectl apply -f k8s/deployment.yaml || echo "Namespace already exists."
 
-      - name: Deploy PostgreSQL
+      - name: Deploy PostgreSQL and Async Bank App
         run: |
-          kubectl apply -f k8s/postgres-deployment.yaml -n async-bank-app
+          kubectl apply -f k8s/deployment.yaml -n async-bank-app
           kubectl rollout status deployment/bank-postgres -n async-bank-app
+          kubectl rollout status deployment/async-bank-app -n async-bank-app
 
-      - name: Deploy Async Bank App
+      - name: Update App Image in Kubernetes Deployment
         run: |
-          kubectl apply -f k8s/async-bank-app-deployment.yaml -n async-bank-app
+          kubectl set image deployment/async-bank-app async-bank-app=docker.io/1dlvb/async-bank-app:${{ github.sha }} -n async-bank-app
           kubectl rollout status deployment/async-bank-app -n async-bank-app
