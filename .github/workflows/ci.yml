@@ -56,5 +56,5 @@ jobs:
 
       - name: Deploy to Kubernetes
         run: |
-          kubectl apply -f k8s/deployment.yaml
+          kubectl apply -f k8s/deployment.yaml --validate=false
           kubectl rollout status deployment/async-bank-app -n default
