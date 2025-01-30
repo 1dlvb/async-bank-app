@@ -50,7 +50,8 @@ jobs:
           mkdir -p $HOME/.kube
           echo "${{ secrets.KUBE_CONFIG }}" | base64 --decode > $HOME/.kube/config
           
-          # Create a new context for Kubernetes
+          kubectl config set-cluster my-cluster --server=https://172.16.0.2:6443
+  
           kubectl config set-context Default --cluster=my-cluster --user=my-user --namespace=async-bank-app
           kubectl config use-context Default
           kubectl config current-context
