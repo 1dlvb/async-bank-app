@@ -47,25 +47,10 @@ jobs:
 
       - name: Set up Kubeconfig
         run: |
-          mkdir -p $HOME/.kube
-          echo "${{ secrets.KUBE_CONFIG }}" > $HOME/.kube/config
-
-          kubectl config current-context
-          kubectl config get-contexts
-          kubectl cluster-info
-
-      - name: Create Kubernetes Namespace (if not exists)
-        run: |
-          kubectl apply -f k8s/namespace.yaml || echo "Namespace already exists."
-
-      - name: Deploy PostgreSQL and Async Bank App
-        run: |
-          kubectl apply -f k8s/deployment.yaml -n async-bank-app --validate=false
-
-          kubectl rollout status deployment/bank-postgres -n async-bank-app
-          kubectl rollout status deployment/async-bank-app -n async-bank-app
-
-      - name: Update App Image in Kubernetes Deployment
-        run: |
-          kubectl set image deployment/async-bank-app async-bank-app=docker.io/1dlvb/async-bank-app:${{ github.sha }} -n async-bank-app
-          kubectl rollout status deployment/async-bank-app -n async-bank-app
+          mkdir ${HOME}/.kube
+          echo ${{ secrets.KUBE_CONFIG }} | base64 --decode > ${HOME}/.kube/config
+          cat ${HOME}/.kube/config
+      - name: Use context
+        run: kubectl config use-context Default
+      - name: Deploy to K8s
+        run: kubectl apply -f k8s/
