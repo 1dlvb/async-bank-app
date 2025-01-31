@@ -43,12 +43,19 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
+
       - name: Create kubeconfig
         run: |
-          mkdir ${HOME}/.kube
+          mkdir -p ${HOME}/.kube
           echo ${{ secrets.KUBE_CONFIG }} | base64 --decode > ${HOME}/.kube/config
-          cat ${HOME}/.kube/config
+          echo "Setting up user credentials..."
+          kubectl config set-credentials docker-desktop \
+            --client-certificate=${HOME}/.kube/client-cert.pem \
+            --client-key=${HOME}/.kube/client-key.pem
+          kubectl config set-context docker-desktop --user=docker-desktop
+
       - name: Use context
         run: kubectl config use-context docker-desktop
+
       - name: Deploy to K8s
         run: kubectl apply -f k8s/ --validate=false
