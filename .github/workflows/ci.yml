@@ -48,7 +48,7 @@ jobs:
         run: |
           mkdir -p ${HOME}/.kube
           echo ${{ secrets.KUBE_CONFIG }} | base64 --decode > ${HOME}/.kube/config
-          kubectl config set-context kubernetes-admin@kubernetes
+          kubectl config set-context kubernetes-admin@kubernetes --user=kubernetes-admin@kubernetes
 
       - name: Use context
         run: kubectl config use-context kubernetes-admin@kubernetes
