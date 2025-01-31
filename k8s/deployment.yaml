@@ -1,0 +1,128 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: async-bank-app
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pvc
+  namespace: async-bank-app
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bank-postgres
+  namespace: async-bank-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bank-postgres
+  template:
+    metadata:
+      labels:
+        app: bank-postgres
+    spec:
+      containers:
+        - name: bank-postgres
+          image: postgres:16
+          env:
+            - name: POSTGRES_USER
+              value: "postgres"
+            - name: POSTGRES_PASSWORD
+              value: "postgres"
+            - name: POSTGRES_DB
+              value: "bank_db"
+          ports:
+            - containerPort: 5432
+          volumeMounts:
+            - name: postgres-storage
+              mountPath: /var/lib/postgresql/data
+          resources:
+            requests:
+              memory: "1Gi"
+              cpu: "500m"
+              storage: "5Gi"
+            limits:
+              memory: "2Gi"
+              cpu: "1"
+              storage: "10Gi"
+      volumes:
+        - name: postgres-storage
+          persistentVolumeClaim:
+            claimName: postgres-pvc
+      automountServiceAccountToken: false
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bank-postgres
+  namespace: async-bank-app
+spec:
+  ports:
+    - port: 5432
+      targetPort: 5432
+  selector:
+    app: bank-postgres
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: async-bank-app
+  namespace: async-bank-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: async-bank-app
+  template:
+    metadata:
+      labels:
+        app: async-bank-app
+    spec:
+      containers:
+        - name: async-bank-app
+          image: 1dlvb/async-bank-app:latest
+          env:
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:postgresql://bank-postgres:5432/bank_db"
+            - name: SPRING_DATASOURCE_USERNAME
+              value: "postgres"
+            - name: SPRING_DATASOURCE_PASSWORD
+              value: "postgres"
+          ports:
+            - containerPort: 8080
+          resources:
+            requests:
+              memory: "1Gi"
+              cpu: "250m"
+              storage: "5Gi"
+            limits:
+              memory: "2Gi"
+              cpu: "500m"
+              storage: "2Gi"
+      automountServiceAccountToken: false
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: async-bank-app
+  namespace: async-bank-app
+spec:
+  ports:
+    - port: 8080
+      targetPort: 8080
+  selector:
+    app: async-bank-app
