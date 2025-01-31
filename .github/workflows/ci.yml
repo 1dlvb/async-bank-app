@@ -44,11 +44,17 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Create kubeconfig
+      - name: Set up kubeconfig
         run: |
           mkdir -p ${HOME}/.kube
           echo ${{ secrets.KUBE_CONFIG }} | base64 --decode > ${HOME}/.kube/config
-          kubectl config set-context kubernetes-admin@kubernetes --user=kubernetes-admin@kubernetes
+      
+          USERNAME=$(kubectl config view --minify -o jsonpath='{.contexts[0].context.user}')
+          TOKEN=$(kubectl config view --minify -o jsonpath='{.users[0].user.token}')
+      
+          kubectl config set-credentials ${USERNAME} --token=${TOKEN}
+          kubectl config set-context my-context --user=${USERNAME} --cluster=k8s-cluster-6bd6-23f5f0ed9fe7
+          kubectl config use-context my-context
 
       - name: Use context
         run: kubectl config use-context kubernetes-admin@kubernetes
