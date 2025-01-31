@@ -51,7 +51,7 @@ jobs:
           kubectl config set-context kubernetes-admin@kubernetes
 
       - name: Use context
-        run: kubectl config use-context docker-desktop
+        run: kubectl config use-context kubernetes-admin@kubernetes
 
       - name: Deploy to K8s
         run: kubectl apply -f k8s/ --validate=false
