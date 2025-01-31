@@ -53,8 +53,7 @@ jobs:
           TOKEN=$(kubectl config view --minify -o jsonpath='{.users[0].user.token}')
       
           kubectl config set-credentials ${USERNAME} --token=${TOKEN}
-          kubectl config set-context my-context --user=${USERNAME} --cluster=k8s-cluster-6bd6-23f5f0ed9fe7
-          kubectl config use-context my-context
+          kubectl config set-context kubernetes-admin@kubernetes --user=${USERNAME} --cluster=k8s-cluster-6bd6-23f5f0ed9fe7
 
       - name: Use context
         run: kubectl config use-context kubernetes-admin@kubernetes
